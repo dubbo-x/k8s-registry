@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client
+spec:
+  restartPolicy: Never
+  containers:
+  - image: gaoxinge/k8s-registry-client
+    name: client
+    env:
+    - name: DUBBO_NAMESPACE
+      value: "default"
+    - name: NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+  serviceAccountName: dubbo-sa

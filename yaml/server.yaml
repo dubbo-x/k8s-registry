@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      role: server
+  template:
+    metadata:
+      labels:
+        role: server
+    spec:
+      containers:
+      - image: gaoxinge/k8s-registry-server
+        name: server
+        env:
+        - name: DUBBO_NAMESPACE
+          value: "default"
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+      serviceAccountName: dubbo-sa
