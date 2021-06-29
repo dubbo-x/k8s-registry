@@ -16,8 +16,6 @@ spec:
       - image: gaoxinge/k8s-registry-server
         name: server
         env:
-        - name: DUBBO_NAMESPACE
-          value: "default"
         - name: NAMESPACE
           valueFrom:
             fieldRef:

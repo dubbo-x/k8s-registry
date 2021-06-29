@@ -17,11 +17,11 @@ FROM golang:1.15-alpine AS base
 WORKDIR $GOPATH/github.com/dubbo-x/k8s-registry/client
 ADD . $GOPATH/github.com/dubbo-x/k8s-registry/client
 ENV GOPROXY=https://goproxy.cn,direct
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o /client/client .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o /client/client cmd/client.go
 
 FROM alpine
 COPY --from=base /client/client /client/client
-COPY client.yml log.yml /client/
+COPY conf/client.yml conf/log.yml /client/
 ENV CONF_CONSUMER_FILE_PATH "/client/client.yml"
 ENV APP_LOG_CONF_FILE "/client/log.yml"
 ENTRYPOINT ["/client/client"]

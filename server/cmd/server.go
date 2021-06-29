@@ -19,6 +19,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -27,14 +28,23 @@ import (
 )
 
 import (
+	_ "dubbo.apache.org/dubbo-go/v3/cluster/cluster_impl"
+	_ "dubbo.apache.org/dubbo-go/v3/cluster/loadbalance"
+	_ "dubbo.apache.org/dubbo-go/v3/common/proxy/proxy_factory"
 	"dubbo.apache.org/dubbo-go/v3/config"
+	_ "dubbo.apache.org/dubbo-go/v3/filter/filter_impl"
+	_ "dubbo.apache.org/dubbo-go/v3/protocol/dubbo"
+	_ "dubbo.apache.org/dubbo-go/v3/registry/kubernetes"
+	_ "dubbo.apache.org/dubbo-go/v3/registry/protocol"
 )
 
-var userProvider = new(UserProvider)
-
 func init() {
-	config.SetConsumerService(userProvider)
 	hessian.RegisterPOJO(&User{})
+	config.SetProviderService(new(UserProvider))
+}
+
+func println(format string, args ...interface{}) {
+	fmt.Printf("\033[32;40m"+format+"\033[0m\n", args...)
 }
 
 type User struct {
@@ -44,14 +54,26 @@ type User struct {
 	Time time.Time
 }
 
-type UserProvider struct {
-	GetUser func(ctx context.Context, req []interface{}, rsp *User) error
+func (u User) JavaClassName() string {
+	return "com.ikurento.user.User"
+}
+
+type UserProvider struct{}
+
+func (u *UserProvider) GetUser(ctx context.Context, req []interface{}) (*User, error) {
+	println("req: %v", req)
+	rsp := User{"A001", "Alex Stocks", 18, time.Now()}
+	println("rsp: %v", rsp)
+	return &rsp, nil
 }
 
 func (u *UserProvider) Reference() string {
 	return "UserProvider"
 }
 
-func (User) JavaClassName() string {
-	return "com.ikurento.user.User"
+func main() {
+	hessian.RegisterPOJO(&User{})
+	config.SetProviderService(new(UserProvider))
+	config.Load()
+	select {}
 }

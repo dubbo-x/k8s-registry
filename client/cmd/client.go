@@ -42,26 +42,36 @@ func println(format string, args ...interface{}) {
 	fmt.Printf("\033[32;40m"+format+"\033[0m\n", args...)
 }
 
-// they are necessary:
-// 		export CONF_CONSUMER_FILE_PATH="xxx"
-// 		export APP_LOG_CONF_FILE="xxx"
+type User struct {
+	ID   string
+	Name string
+	Age  int32
+	Time time.Time
+}
+
+func (User) JavaClassName() string {
+	return "com.ikurento.user.User"
+}
+
+type UserProvider struct {
+	GetUser func(ctx context.Context, req []interface{}, rsp *User) error
+}
+
+func (u *UserProvider) Reference() string {
+	return "UserProvider"
+}
+
 func main() {
-	hessian.RegisterPOJO(&User{})
+	var userProvider = new(UserProvider)
+
+	config.SetConsumerService(userProvider)
+	hessian.RegisterPOJO(new(User))
 	config.Load()
-	time.Sleep(3e9)
 
-	println("\n\n\nstart to test dubbo")
-
-	go func() {
-		select {
-		case <-time.After(time.Minute):
-			panic("provider not start after client already running 1min")
-		}
-	}()
 	user := &User{}
 	err := userProvider.GetUser(context.TODO(), []interface{}{"A001"}, user)
 	if err != nil {
 		panic(err)
 	}
-	println("response result: %v\n", user)
+	println("rsp: %v", user)
 }
