@@ -5,7 +5,7 @@ metadata:
 spec:
   restartPolicy: Never
   containers:
-  - image: gaoxinge/k8s-registry-client
+  - image: gaoxinge/k8s-registry-client:v3.0.0-rc2
     name: client
     env:
     - name: DUBBO_NAMESPACE
