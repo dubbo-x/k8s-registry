@@ -13,7 +13,7 @@ spec:
         role: server
     spec:
       containers:
-      - image: gaoxinge/k8s-registry-server
+      - image: gaoxinge/k8s-registry-server:v3.0.0-rc1
         name: server
         env:
         - name: NAMESPACE
