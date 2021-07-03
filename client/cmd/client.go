@@ -24,54 +24,55 @@ import (
 )
 
 import (
-	hessian "github.com/apache/dubbo-go-hessian2"
-)
-
-import (
 	_ "dubbo.apache.org/dubbo-go/v3/cluster/cluster_impl"
 	_ "dubbo.apache.org/dubbo-go/v3/cluster/loadbalance"
 	_ "dubbo.apache.org/dubbo-go/v3/common/proxy/proxy_factory"
 	"dubbo.apache.org/dubbo-go/v3/config"
 	_ "dubbo.apache.org/dubbo-go/v3/filter/filter_impl"
-	_ "dubbo.apache.org/dubbo-go/v3/protocol/dubbo"
+	_ "dubbo.apache.org/dubbo-go/v3/protocol/grpc"
 	_ "dubbo.apache.org/dubbo-go/v3/registry/kubernetes"
 	_ "dubbo.apache.org/dubbo-go/v3/registry/protocol"
 )
+
+import (
+	"github.com/dubbo-x/k8s-registry/client/pkg"
+	"github.com/dubbo-x/k8s-registry/client/protobuf"
+)
+
+var grpcGreeterImpl = new(pkg.GrpcGreeterImpl)
+
+func init() {
+	config.SetConsumerService(grpcGreeterImpl)
+}
 
 func println(format string, args ...interface{}) {
 	fmt.Printf("\033[32;40m"+format+"\033[0m\n", args...)
 }
 
-type User struct {
-	ID   string
-	Name string
-	Age  int32
-	Time time.Time
-}
-
-func (User) JavaClassName() string {
-	return "com.ikurento.user.User"
-}
-
-type UserProvider struct {
-	GetUser func(ctx context.Context, req []interface{}, rsp *User) error
-}
-
-func (u *UserProvider) Reference() string {
-	return "UserProvider"
-}
-
+// they are necessary:
+// 		export CONF_CONSUMER_FILE_PATH="xxx"
+// 		export APP_LOG_CONF_FILE="xxx"
 func main() {
-	var userProvider = new(UserProvider)
-
-	config.SetConsumerService(userProvider)
-	hessian.RegisterPOJO(new(User))
 	config.Load()
+	time.Sleep(3e9)
 
-	user := &User{}
-	err := userProvider.GetUser(context.TODO(), []interface{}{"A001"}, user)
+	println("\n\n\nstart to test dubbo")
+
+	go func() {
+		select {
+		case <-time.After(time.Minute):
+			panic("provider not start after client already running 1min")
+		}
+	}()
+
+	reply := &protobuf.HelloReply{}
+	req := &protobuf.HelloRequest{
+		Name: "xujianhai",
+	}
+	err := grpcGreeterImpl.SayHello(context.TODO(), req, reply)
 	if err != nil {
 		panic(err)
 	}
-	println("rsp: %v", user)
+
+	println("response result: %v\n", reply)
 }

@@ -5,7 +5,7 @@ metadata:
 spec:
   restartPolicy: Never
   containers:
-  - image: gaoxinge/k8s-registry-client
+  - image: gaoxinge/k8s-registry-client:dubbo-go-samples-issue6-0
     name: client
     env:
     - name: DUBBO_NAMESPACE
@@ -14,4 +14,5 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: metadata.namespace
+    imagePullPolicy: Always
   serviceAccountName: dubbo-sa

@@ -18,13 +18,10 @@
 package main
 
 import (
-	"context"
-	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
-)
-
-import (
-	hessian "github.com/apache/dubbo-go-hessian2"
 )
 
 import (
@@ -33,47 +30,42 @@ import (
 	_ "dubbo.apache.org/dubbo-go/v3/common/proxy/proxy_factory"
 	"dubbo.apache.org/dubbo-go/v3/config"
 	_ "dubbo.apache.org/dubbo-go/v3/filter/filter_impl"
-	_ "dubbo.apache.org/dubbo-go/v3/protocol/dubbo"
+	_ "dubbo.apache.org/dubbo-go/v3/protocol/grpc"
 	_ "dubbo.apache.org/dubbo-go/v3/registry/kubernetes"
 	_ "dubbo.apache.org/dubbo-go/v3/registry/protocol"
 )
 
-func init() {
-	hessian.RegisterPOJO(&User{})
-	config.SetProviderService(new(UserProvider))
-}
+import (
+	"github.com/dubbo-x/k8s-registry/server/pkg"
+)
 
-func println(format string, args ...interface{}) {
-	fmt.Printf("\033[32;40m"+format+"\033[0m\n", args...)
-}
+var (
+	survivalTimeout = int(3 * time.Second)
+)
 
-type User struct {
-	ID   string
-	Name string
-	Age  int32
-	Time time.Time
-}
-
-func (u User) JavaClassName() string {
-	return "com.ikurento.user.User"
-}
-
-type UserProvider struct{}
-
-func (u *UserProvider) GetUser(ctx context.Context, req []interface{}) (*User, error) {
-	println("req: %v", req)
-	rsp := User{"A001", "Alex Stocks", 18, time.Now()}
-	println("rsp: %v", rsp)
-	return &rsp, nil
-}
-
-func (u *UserProvider) Reference() string {
-	return "UserProvider"
-}
-
+// they are necessary:
+// 		export CONF_PROVIDER_FILE_PATH="xxx"
+// 		export APP_LOG_CONF_FILE="xxx"
 func main() {
-	hessian.RegisterPOJO(&User{})
-	config.SetProviderService(new(UserProvider))
+	config.SetProviderService(pkg.NewGreeterProvider())
 	config.Load()
-	select {}
+	initSignal()
+}
+
+func initSignal() {
+	signals := make(chan os.Signal, 1)
+	// It is not possible to block SIGKILL or syscall.SIGSTOP
+	signal.Notify(signals, os.Interrupt, os.Kill, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
+	for {
+		sig := <-signals
+		switch sig {
+		case syscall.SIGHUP:
+			// reload()
+		default:
+			time.AfterFunc(time.Duration(survivalTimeout), func() {
+				os.Exit(1)
+			})
+			return
+		}
+	}
 }

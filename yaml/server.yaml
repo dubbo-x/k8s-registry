@@ -13,11 +13,14 @@ spec:
         role: server
     spec:
       containers:
-      - image: gaoxinge/k8s-registry-server
+      - image: gaoxinge/k8s-registry-server:dubbo-go-samples-issue6-0
         name: server
         env:
+        - name: DUBBO_NAMESPACE
+          value: "default"
         - name: NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        imagePullPolicy: Always
       serviceAccountName: dubbo-sa
